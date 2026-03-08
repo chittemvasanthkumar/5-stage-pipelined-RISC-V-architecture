@@ -30,9 +30,7 @@ reg [31:0] RegFile  [0:31];
 reg [31:0] ALU_result;
 
 
-/* ======================
-   Stage 1 : IF
-   ====================== */
+/*Stage 1 : IF*/
 
 always @(posedge clk)
 begin
@@ -42,9 +40,7 @@ begin
 end
 
 
-/* ======================
-   Stage 2 : ID
-   ====================== */
+/*Stage 2 : ID*/
 
 always @(posedge clk)
 begin
@@ -57,9 +53,7 @@ begin
 end
 
 
-/* ======================
-   Stage 3 : EX
-   ====================== */
+/* Stage 3 : EX */
 
 always @(posedge clk)
 begin
@@ -90,9 +84,7 @@ begin
 end
 
 
-/* ======================
-   Stage 4 : MEM
-   ====================== */
+/* Stage 4 : MEM */
 
 always @(posedge clk)
 begin
@@ -109,9 +101,7 @@ begin
 end
 
 
-/* ======================
-   Stage 5 : WB
-   ====================== */
+/* Stage 5 : WB */
 
 always @(posedge clk)
 begin
