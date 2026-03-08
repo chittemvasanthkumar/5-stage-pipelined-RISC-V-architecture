@@ -36,7 +36,7 @@ always @(posedge clk)
 begin
     IF_ID_IR <= InstrMem[PC];
     IF_ID_PC <= PC;
-    PC <= PC + 1;
+    PC <= PC + 4;
 end
 
 
