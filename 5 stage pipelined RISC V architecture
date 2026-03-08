@@ -1,0 +1,129 @@
+module riscv_pipeline(clk, reset);
+
+input clk, reset;
+
+reg [31:0] PC;
+
+/* Pipeline Registers */
+
+reg [31:0] IF_ID_IR, IF_ID_PC;
+
+reg [31:0] ID_EX_A, ID_EX_B, ID_EX_Imm;
+reg [4:0]  ID_EX_rd;
+
+reg [31:0] EX_MEM_ALUout, EX_MEM_B;
+reg [4:0]  EX_MEM_rd;
+
+reg [31:0] MEM_WB_LMD, MEM_WB_ALUout;
+reg [4:0]  MEM_WB_rd;
+
+
+/* Memories and Register file */
+
+reg [31:0] InstrMem [0:255];
+reg [31:0] DataMem  [0:255];
+reg [31:0] RegFile  [0:31];
+
+
+/* ALU */
+
+reg [31:0] ALU_result;
+
+
+/* ======================
+   Stage 1 : IF
+   ====================== */
+
+always @(posedge clk)
+begin
+    IF_ID_IR <= InstrMem[PC];
+    IF_ID_PC <= PC;
+    PC <= PC + 1;
+end
+
+
+/* ======================
+   Stage 2 : ID
+   ====================== */
+
+always @(posedge clk)
+begin
+
+    ID_EX_A <= RegFile[IF_ID_IR[19:15]];
+    ID_EX_B <= RegFile[IF_ID_IR[24:20]];
+    ID_EX_Imm <= {{20{IF_ID_IR[31]}}, IF_ID_IR[31:20]};
+    ID_EX_rd <= IF_ID_IR[11:7];
+
+end
+
+
+/* ======================
+   Stage 3 : EX
+   ====================== */
+
+always @(posedge clk)
+begin
+
+    case(IF_ID_IR[6:0])   // opcode
+
+    7'b0110011:   // R type
+        ALU_result = ID_EX_A + ID_EX_B;
+
+    7'b0010011:   // ADDI
+        ALU_result = ID_EX_A + ID_EX_Imm;
+
+    7'b0000011:   // LOAD
+        ALU_result = ID_EX_A + ID_EX_Imm;
+
+    7'b0100011:   // STORE
+        ALU_result = ID_EX_A + ID_EX_Imm;
+
+    default:
+        ALU_result = 0;
+
+    endcase
+
+    EX_MEM_ALUout <= ALU_result;
+    EX_MEM_B <= ID_EX_B;
+    EX_MEM_rd <= ID_EX_rd;
+
+end
+
+
+/* ======================
+   Stage 4 : MEM
+   ====================== */
+
+always @(posedge clk)
+begin
+
+    if(IF_ID_IR[6:0] == 7'b0000011)     // LOAD
+        MEM_WB_LMD <= DataMem[EX_MEM_ALUout];
+
+    if(IF_ID_IR[6:0] == 7'b0100011)     // STORE
+        DataMem[EX_MEM_ALUout] <= EX_MEM_B;
+
+    MEM_WB_ALUout <= EX_MEM_ALUout;
+    MEM_WB_rd <= EX_MEM_rd;
+
+end
+
+
+/* ======================
+   Stage 5 : WB
+   ====================== */
+
+always @(posedge clk)
+begin
+
+    if(IF_ID_IR[6:0] == 7'b0110011 || 
+       IF_ID_IR[6:0] == 7'b0010011)
+
+        RegFile[MEM_WB_rd] <= MEM_WB_ALUout;
+
+    if(IF_ID_IR[6:0] == 7'b0000011)
+        RegFile[MEM_WB_rd] <= MEM_WB_LMD;
+
+end
+
+endmodule
